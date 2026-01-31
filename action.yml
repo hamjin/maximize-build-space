@@ -127,6 +127,7 @@ runs:
           fi
           if [[ ${{ inputs.remove-haskell }} == 'true' ]]; then
             sudo rm -rf /opt/ghc
+            sudo rm -rf /usr/local/.ghcup
           fi
           if [[ ${{ inputs.remove-codeql }} == 'true' ]]; then
             sudo rm -rf /opt/hostedtoolcache/CodeQL

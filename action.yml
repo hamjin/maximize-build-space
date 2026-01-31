@@ -158,17 +158,22 @@ runs:
           sudo pvcreate -f "${ROOT_LOOP_DEV}"
 
           # create pv on temp disk
-          echo "  Creating LVM PV on temp fs."
-          TMP_RESERVE_KB=$(expr ${{ inputs.temp-reserve-mb }} \* 1024)
-          TMP_FREE_KB=$(df --block-size=1024 --output=avail /mnt | tail -1)
-          TMP_LVM_SIZE_KB=$(expr $TMP_FREE_KB - $TMP_RESERVE_KB)
-          TMP_LVM_SIZE_BYTES=$(expr $TMP_LVM_SIZE_KB \* 1024)
-          sudo touch "${{ inputs.tmp-pv-loop-path }}" && sudo fallocate -z -l "${TMP_LVM_SIZE_BYTES}" "${{ inputs.tmp-pv-loop-path }}"
-          export TMP_LOOP_DEV=$(sudo losetup --find --show "${{ inputs.tmp-pv-loop-path }}")
-          sudo pvcreate -f "${TMP_LOOP_DEV}"
+          if mountpoint -q /mnt;then
+            echo "  Creating LVM PV on temp fs."
+            TMP_RESERVE_KB=$(expr ${{ inputs.temp-reserve-mb }} \* 1024)
+            TMP_FREE_KB=$(df --block-size=1024 --output=avail /mnt | tail -1)
+            TMP_LVM_SIZE_KB=$(expr $TMP_FREE_KB - $TMP_RESERVE_KB)
+            TMP_LVM_SIZE_BYTES=$(expr $TMP_LVM_SIZE_KB \* 1024)
+            sudo touch "${{ inputs.tmp-pv-loop-path }}" && sudo fallocate -z -l "${TMP_LVM_SIZE_BYTES}" "${{ inputs.tmp-pv-loop-path }}"
+            export TMP_LOOP_DEV=$(sudo losetup --find --show "${{ inputs.tmp-pv-loop-path }}")
+            sudo pvcreate -f "${TMP_LOOP_DEV}"
+          else
+            echo "/mnt is not a mountpoint,skiping creating LVM PV on it"
+            export TMP_LOOP_DEV=""
+          fi
 
           # create volume group from these pvs
-          sudo vgcreate "${VG_NAME}" "${TMP_LOOP_DEV}" "${ROOT_LOOP_DEV}"
+          eval sudo vgcreate "${VG_NAME}" "${TMP_LOOP_DEV}" "${ROOT_LOOP_DEV}"
 
           echo "Recreating swap"
           # create and activate swap

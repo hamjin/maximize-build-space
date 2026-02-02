@@ -180,7 +180,7 @@ runs:
           # create and activate swap
           sudo lvcreate -L "${{ inputs.swap-size-mb }}M" -n swap "${VG_NAME}"
           sudo mkswap "/dev/mapper/${VG_NAME}-swap"
-          sudo swapon "/dev/mapper/${VG_NAME}-swap"
+          sudo swapon -p -100 "/dev/mapper/${VG_NAME}-swap"
 
           echo "Creating build volume"
           # create and mount build volume
